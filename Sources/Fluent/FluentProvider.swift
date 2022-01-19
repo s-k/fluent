@@ -14,7 +14,7 @@ extension Request {
                 logger: self.logger,
                 on: self.eventLoop,
                 history: self.fluent.history.historyEnabled ? self.fluent.history.history : nil,
-                instrumentation: self.application.fluent.instrumentation.instrumentationEnabled ? self.application.fluent.instrumentation.instrumentation : nil,
+                instrumentation: self.fluent.instrumentation.instrumentationEnabled ? self.fluent.instrumentation.instrumentation : nil,
                 pageSizeLimit: self.fluent.pagination.pageSizeLimit != nil ? self.fluent.pagination.pageSizeLimit?.value : self.application.fluent.pagination.pageSizeLimit
             )!
     }

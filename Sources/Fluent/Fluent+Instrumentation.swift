@@ -14,6 +14,16 @@ struct FluentInstrumentation {
     let enabled: Bool
 }
 
+extension Request.Fluent {
+    public var instrumentation: Instrumentation {
+        .init(fluent: self)
+    }
+
+    public struct Instrumentation {
+        let fluent: Request.Fluent
+    }
+}
+
 extension Application.Fluent.Instrumentation {
     var instrumentationEnabled: Bool {
         storage[FluentInstrumentationKey.self]?.enabled ?? false
@@ -51,6 +61,56 @@ extension Application.Fluent.Instrumentation {
     public func start() {
         storage[FluentInstrumentationKey.self] = .init(enabled: true)
         storage[RequestQueryInstrumentation.self] = .init()
+    }
+
+    /// Stop instrumenting queries
+    public func stop() {
+        storage[FluentInstrumentationKey.self] = .init(enabled: false)
+    }
+
+    /// Clear the instrumented query records (clears aggregate stats but not the global record)
+    public func clear() {
+        storage[RequestQueryInstrumentation.self] = .init()
+    }
+}
+
+extension Request.Fluent.Instrumentation {
+    var instrumentationEnabled: Bool {
+        return (storage[FluentInstrumentationKey.self]?.enabled) ?? false
+    }
+
+    var storage: Storage {
+        get {
+            self.fluent.request.storage
+        }
+        nonmutating set {
+            self.fluent.request.storage = newValue
+        }
+    }
+
+    var instrumentation: QueryInstrumentation? {
+        return storage[RequestQueryInstrumentation.self]
+    }
+
+    /// The stored per-query performance records
+    public var queryRecords: [SQLQueryPerformanceRecord] {
+        return instrumentation?.queryRecords ?? []
+    }
+
+    /// The stored aggregate performance record for the database configuration
+    public var aggregateData: SQLQueryPerformanceRecord? {
+        return instrumentation?.aggregateRecord
+    }
+    
+    /// The stored aggregate performance record for the process as a whole. May be empty.
+    public var globalData: SQLQueryPerformanceRecord {
+        return QueryInstrumentation.readGlobalRecordSnapshot()
+    }
+
+    /// Start instrumenting queries
+    public func start() {
+        self.fluent.request.storage[FluentInstrumentationKey.self] = .init(enabled: true)
+        self.fluent.request.storage[RequestQueryInstrumentation.self] = .init()
     }
 
     /// Stop instrumenting queries
